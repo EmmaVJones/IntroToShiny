@@ -1,0 +1,23 @@
+---
+title: "Example Report from Shiny App"
+output: html_document
+params:
+  table_usersubset: 'NULL'
+  plot_cdfplot: 'NULL'
+---
+
+
+Here you can write a report based on what analyses or graphics the user develops in their shiny app session.
+
+### User subset data
+```{r, echo=F}
+DT::datatable(params[['table_usersubset']],rownames = F)
+```
+
+
+    
+    
+### CDF Plot
+```{r,echo=F,fig.height=10,fig.width=15}
+params[['plot_cdfplot']]
+```
