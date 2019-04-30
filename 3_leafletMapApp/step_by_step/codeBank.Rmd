@@ -1,0 +1,34 @@
+---
+title: "Code Bank: 3_leafletMapApp"
+author: "Emma Jones"
+date: "4/30/2019"
+output: html_document
+---
+
+
+## Background 
+
+This script is meant to assist you both in and out of the workshop. Feel free to copy/paste code from this script into the appropriate files to run your app in case you miss a step as  we are walking through it together. You can also use this script as you build your own apps because it is organized in paired ui/server blocks of code that demonstrate complete reactive elements. 
+ 
+We will apply the following steps in order to transform our ui/server files (ui_start.R and server_start.R, respectively) into the final app (final_app_scripts/ui_final.R and final_app_scripts/ui_final.R).
+
+
+
+## Code
+
+### Step 1: Hook up leaflet map to our data
+
+#### SERVER
+
+Delete the previous output$myMap <- renderLeaflet() statement and replace with:
+
+```{r step1_server}
+
+output$myMap <- renderLeaflet({
+  leaflet(probData) %>% addProviderTiles('OpenStreetMap')%>%
+    fitBounds(~min(LongitudeDD),~min(LatitudeDD),
+              ~max(LongitudeDD),~max(LatitudeDD))
+})
+
+```
+

@@ -6,8 +6,11 @@ source("global.R")
 shinyServer(function(input, output, session) {
   
   output$myMap <- renderLeaflet({
-    leaflet() %>% addProviderTiles('Thunderforest.Outdoors')
+    leaflet(probData) %>% addProviderTiles('OpenStreetMap')%>%
+      fitBounds(~min(LongitudeDD),~min(LatitudeDD),
+                ~max(LongitudeDD),~max(LatitudeDD))
   })
+  
   
   
   
