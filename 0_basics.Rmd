@@ -1,0 +1,88 @@
+---
+title: "Shiny Basics"
+author: "Emma Jones"
+date: "4/30/2019"
+output: html_document
+---
+
+
+
+This script walks you through the basics of shiny and building your first Shiny app. Please run this prior to attending the shiny workshop to ensure you will have no unexpected issues during the course. There is a lot of information to cover, so taking care of these beginning steps before the workshop will ensure we can go over all planned examples.
+
+If you run into any issues prior to the workshop, do not hesitate to contact me:
+  emma.jones@deq.virginia.gov.
+
+Step 1: Install Shiny Package from CRAN. Delete the # and run each line of code if you have not updated your packages to run in R 3.5.2 already.
+
+```{r install packages}
+#install.packages('shiny')
+#install.packages('leaflet')
+#install.packages('plyr')
+#install.packages('dplyr')
+#install.packages('ggplot2')
+#install.packages('DT')
+#install.packages('rgdal')
+#install.packages('reshape2')
+```
+
+
+Step 2: Load packages into your R session. These are the packages we will use in the workshop.
+
+```{r load packages}
+library(shiny)
+library(leaflet)
+library(plyr)
+library(dplyr)
+library(ggplot2)
+library(DT)
+library(rgdal)
+library(reshape2)
+```
+
+
+Step 3: Load example shiny app
+
+```{r 01_hello}
+
+runExample("01_hello")
+
+```
+
+Note the highlighted code as you play with the reactive components of the app. These sections are the reactive components handling each user-defined in app change. 
+
+
+Step 4: Become a Shiny app developer
+
+This is a basic Shiny app template. Select all three lines of code and run them in the console. Alternatively, you can press 'Play' on the top right of the chunk to run all code inside the chunk at once. A new browser window will open and show a blank html page. 
+
+```{r shinyNinja}
+
+ui <- fluidPage()
+server <- function(input, output) {}
+shinyApp(ui = ui, server = server)
+
+```
+
+
+So that didn't do much. Your app is working if it opened a blank window. Don't choose another workshop quite yet. It will get better.
+
+All Shiny apps follow that same basic template. Your ui dictates what the user sees, the server call controls all app logic, and the shinyApp() function allows the previous two components to work together and create an app. 
+
+Let's get RStudio to build an app for us. File -> New File -> Shiny Web App... 
+
+Name the app whatever you want, choose 'Single File (app.R). Notice RStudio names the file app.R. When you build an app in a single file (and name it app.R), RStudio changes the Run button to Run App. 
+
+It is not a good idea to save more than one app to the same directory, so if you were to repeat those steps above again, RStudio would make a new  folder to store your second app in. Notice the basic structure of the ui and server functions. Also, click Run App to see how the app works. 
+
+Note that there is a drop down option next to Run App. This is a really neat feature that we will discuss more later. For now, try running the app in each of the three options. Supported browsers include Google Chrome, Mozilla Firefox, Safari (Mac), and supposedly Internet Explorer. I have never had much luck using IE when running apps from the shiny server or using the Run External option. I use Google Chrome and advise downloading it before the  workshop if it is not already downloaded. You can install it without admin rights.
+
+The best way to build more complicated apps is to separate out the ui and server into separate .R files.  We will do that in the workshop. Until then, take some time to explore these links to get inspired. 
+
+https://www.rstudio.com/products/shiny/shiny-user-showcase/
+
+https://www.showmeshiny.com/
+
+https://shiny.rstudio.com/gallery/
+
+http://shiny.rstudio.com/gallery/widget-gallery.html
+

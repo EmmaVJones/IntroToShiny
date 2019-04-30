@@ -38,44 +38,38 @@ source('global.R')
 ## Server processing
 shinyServer(function(input, output, session) {
   
-  output$dropdownOutput <- renderPrint({ input$dropdownwithallcsvoptions })
-  
-  output$radioOutput <- renderPrint({ input$radio }) 
-  
   output$dropdownwithallcsvoptions <- renderUI({
     selectInput("dropdownwithallcsvoptions","Select Population to Plot",
                 unique(cdfdata$Subpopulation))})
   
-  # Switch is critical for radio buttons and other user input widgets. It transforms the 
-  #  user input into a format you can use for your own data manipulation or server calls
+  
+  output$radioOutput <- renderPrint({ input$radio })
   
   indicator <- reactive({
     switch(input$radio,"1"="VSCIAll","2"="TotalHabitat")})
   
   cdfsubset <- reactive({
-    if(is.null(input$dropdownwithallcsvoptions))
-      return(NULL)
+    req(input$dropdownwithallcsvoptions)
     cdf2 <- filter(cdfdata, Subpopulation == input$dropdownwithallcsvoptions, Indicator == indicator() )
     return(cdf2)
   })
   
-  
   output$tablePreview <- renderTable({
-    if(is.null(cdfsubset()))
-      return(NULL)
-    head(cdfsubset())
+    req(cdfsubset())
+    head(cdfsubset(),15)
   })
-  
   
   output$cdfplot <- renderPlot({
-    if(is.null(cdfsubset()))
-      return(NULL)
-    cdfplotFunction(cdfsubset(),input$dropdown,indicator(),input$conf)
+    req(cdfsubset())
+    cdfplotFunction(cdfsubset(),input$dropdownwithallcsvoptions,indicator(),input$conf)
   })
   
-  output$downloadCDFsubset <- downloadHandler(filename=function(){paste('cdfsubset_',Sys.Date(),'.csv',sep='')},
-                                              content=function(file){
-                                                write.csv(cdfsubset(),file)}
-  )
+  output$downloadCDFsubset <- downloadHandler(
+    filename=function(){
+      # filename, note we customized it based on the user subset data
+      paste('cdfsubset', indicator(), input$radio, Sys.Date(),'.csv', sep='_')},
+    content=function(file){
+      write.csv(cdfsubset(),file)})
+  
   
 })
