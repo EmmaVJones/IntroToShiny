@@ -20,7 +20,6 @@ shinyUI(fluidPage(theme="yeti.css",
                                                                       draggable = T, left = "auto",bottom="auto",height=350,width=350)))),
                              tabPanel("Table")
                   )
-  
-  )
+                  
 )
-                      
+)

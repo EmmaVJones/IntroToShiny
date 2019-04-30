@@ -32,3 +32,407 @@ output$myMap <- renderLeaflet({
 
 ```
 
+
+
+### Step 2: Add an option to change the basemap in the absolute panel
+
+#### UI
+
+Put in absolute panel; DON'T FORGET COMMA!
+
+```{r step2_ui}
+
+# first name it legend
+h4(strong("Legend")),
+
+selectInput("basemap",
+            label = 'Choose a basemap style',  
+            choices=c('Aerial','Street','Topography'),
+            selected='Aerial')
+
+```
+
+
+
+#### SERVER
+
+```{r step2_server}
+
+# Choose basemap
+basemapSelect <- reactive({switch(input$basemap,
+                                  "Aerial"="Esri.WorldImagery",
+                                  "Street"="OpenStreetMap",
+                                  "Topography" = "OpenTopoMap")})
+
+
+```
+
+Change Thunderforest.Outdoors above to addProviderTiles(basemapSelect()) to make server change the basemap
+
+
+
+
+### Step 3: Plot Probmon data on Map
+
+#### UI
+
+Put below selectInput in absolutePanel; DON'T FORGET COMMA!
+
+```{r step3_ui}
+
+wellPanel(h4("ProbMon Data"),
+          checkboxInput('checkbox1','Plot Probmon data',value=F))
+
+```
+
+
+#### SERVER
+
+```{r step3_server}
+# toggle point data on and off on map
+observe({
+  if(input$checkbox1==TRUE){
+    leafletProxy('myMap') %>%
+      addMarkers(data=probData,~LongitudeDD,~LatitudeDD,group = "probData_",
+                 popup=paste(strong("StationID: "),probData$StationID))
+  }else(leafletProxy('myMap')%>%clearGroup('probData_'))})
+
+```
+
+
+
+### Step 4: Plot shapefiles on map
+
+Read in data in server.R (ABOVE shinyServer()).
+All spatial data must always be in WGS84 projection to work with leaflet (web plotting standard)
+
+```{r step4_server.1}
+ecoregions <- readOGR('data', 'vaECOREGIONlevel3__proj84')
+streams <- readOGR('data', 'Streams_wgs84')
+
+```
+
+# You will need to change the exact file location to work with your computer
+
+
+#### UI
+
+DON'T FORGET COMMA!
+
+Put after wellPanel but still in absolutePanel
+
+```{r step4_ui}
+
+checkboxInput('checkbox2','Plot Major Rivers',value=F),
+checkboxInput('checkbox3','Plot Ecoregions',value=F)
+
+```
+
+
+
+#### SERVER
+
+Now build the server side to the checkboxes to plot the stream and ecoregion data on user click.
+
+```{r step4_server.2}
+
+observe({
+  if(input$checkbox2==TRUE){
+    leafletProxy('myMap') %>% 
+      addPolylines(data=streams, color='blue', group="streams_",
+                   popup=streams@data$NAME)
+  }else(leafletProxy('myMap')%>%clearGroup('streams_'))})
+
+
+observe({
+  if(input$checkbox3==TRUE){
+    leafletProxy('myMap') %>% 
+      addPolygons(data=ecoregions, fill = 0.4, stroke = 0.2, color = 'orange',group = "ecoregions_"
+                  ,popup=paste('Ecoregion: ',ecoregions@data$US_L3NAME))
+  }else(leafletProxy('myMap')%>%clearGroup('ecoregions_'))})
+
+```
+
+
+
+
+### Step 5: Make action button to remove all layers at once
+
+#### UI
+
+For flow I like to place right after selectInput()
+
+```{r step5_ui}
+
+actionButton('deselectAll','Deselect All Layers'),
+br(),br(),
+
+```
+
+
+#### SERVER
+
+Change ncheckboxes to total number of checkboxes you have in the app
+
+```{r step5_server}
+
+observeEvent(eventExpr = input$deselectAll,
+             handlerExpr = {lapply(paste0("checkbox", 1:NUMBER OF CHECKBOXES YOU HAVE IN APP),
+                                   function(x){updateCheckboxInput(session = session,inputId = x,value = FALSE)})})
+
+```
+
+
+
+
+### Step 6: Click point on map and get lat/long
+
+#### UI
+
+Change absolutePanel height to 'auto' and add this next chunk.
+
+```{r step6_ui}
+
+# great for testing what R is seeing
+verbatimTextOutput('Click_text')
+
+```
+
+
+#### SERVER
+
+Select point on map with mouse click
+
+```{r step6_server}
+
+observe({
+  click <- input$myMap_marker_click
+  if(is.null(click))
+    return()
+  text <-paste("You've selected point ", click$lat,"and",click$lng)
+  output$Click_text<-renderText({
+    text})
+}) 
+
+```
+
+
+
+### Step 7: Tell server to subset original dataset based on click results
+
+#### SERVER
+
+Change observe call in step 6 to this
+
+
+```{r step7_server}
+
+
+
+observe({
+  click <- input$myMap_marker_click
+  if(is.null(click))
+    return()
+  text <-paste("You've selected point ", click$lat,"and",click$lng)
+  #output$Click_text<-renderText({
+  #  text})
+   # Select data from marker click
+  selectedData <- subset(probData, LatitudeDD>=click$lat-0.0001 & LatitudeDD<=click$lat+0.0001 & 
+                           LongitudeDD>=click$lng-0.0001 & LongitudeDD<=click$lng+0.0001)
+  
+  output$Click_text <- renderText({selectedData$StationID})
+})
+
+```
+  
+  
+  
+  
+### Step 8: Display clicked data
+
+#### UI
+
+Put in Table tabPanel
+
+```{r step8_ui}
+
+DT::dataTableOutput("table")
+
+```
+
+
+
+#### SERVER
+
+Put in step 7 observe statement
+
+```{r step8_server}
+
+output$table <- DT::renderDataTable({
+  if(is.null(selectedData))
+    return(NULL)
+  DT::datatable(selectedData)
+})
+
+ 
+```
+
+
+
+### Step 9: DT package extensions: buttons 
+
+#### SERVER
+
+Replace previous output$table <- with this
+MUST RUN EXTERNAL TO SEE ALL OPTIONS
+
+```{r step9_server}
+
+output$table <- DT::renderDataTable({
+  if(is.null(selectedData))
+    return(NULL)
+  DT::datatable(selectedData,extensions = 'Buttons', escape=F, rownames = F,
+                options=list(dom='Bfrtip',#'Bt',
+                             #B=Buttons, f= filter, r=processing, t =table, i=table information, p= pagination
+                             scrollX = TRUE, # play with this to see how table rendering changes screen width
+                             buttons=list('copy',
+                                          list(extend='csv',filename=selectedData$StationID),
+                                          list(extend='excel',filename=selectedData$StationID))))%>%
+    formatStyle("pH", backgroundColor = styleInterval(brkspH, clrspH))%>%
+    formatStyle("DO", backgroundColor = styleInterval(brksDO, clrsDO)) %>%
+    formatStyle("TN", backgroundColor = styleInterval(brksTN, clrsTN))%>%
+    formatStyle("TP", backgroundColor = styleInterval(brksTP, clrsTP))%>%
+    formatStyle("TotHab", backgroundColor = styleInterval(brksTotHab, clrsTotHab))%>%
+    formatStyle("LRBS", backgroundColor = styleInterval(brksLRBS, clrsLRBS))%>%
+    formatStyle("MetalCCU", backgroundColor = styleInterval(brksMCCU, clrsMCCU))%>%
+    formatStyle("SpCond", backgroundColor = styleInterval(brksSpCond, clrsSpCond))%>%
+    formatStyle("TDS", backgroundColor = styleInterval(brksTDS, clrsTDS))%>%
+    formatStyle("Sf", backgroundColor = styleInterval(brksDS, clrsDS))%>%
+    formatStyle("Cl", backgroundColor = styleInterval(brksDChl, clrsDChl))%>%
+    formatStyle("K", backgroundColor = styleInterval(brksDK, clrsDK))%>%
+    formatStyle("Na", backgroundColor = styleInterval(brksDNa, clrsDNa))})
+              
+
+```
+
+
+
+
+### Step 10: Show difference between tableOutput and DT::dataTableOutput
+
+#### UI
+
+Replace previous tabPanel('Table') with below
+
+```{r step10_ui}
+
+tabPanel("Table",
+         tabsetPanel(
+           tabPanel('Selected Data',
+                    h2("Sellected Data"),
+                    DT::dataTableOutput("table")),
+           tabPanel('All Data',
+                    h2("All Data"),
+                    tableOutput("wholetable"))))
+
+```
+
+        
+
+#### SERVER
+
+```{r step10_server}
+
+output$wholetable <- renderTable(probData)
+
+```
+
+
+
+### Step 11: (Finally) Change Markers plotted and color based on selectInput
+
+11a. Recolor prob points based on stress level
+
+#### UI
+
+I'd recommend this goes beneath the basemap selectInput()
+
+DON'T FORGET COMMA
+
+```{r step11a_ui}
+selectInput("parameterToPlot"
+            ,label = 'Choose a water quality parameter to display'
+            ,choices=c('','VSCI','pH','Dissolved Oxygen','Total Nitrogen','Total Phosphorus'
+                       ,'Total Habitat','LRBS','Metals CCU','Specific Conductivity','Total Dissolved Solids'
+                       ,'Dissolved Sulfate','Dissolved Chloride','Dissolved Potassium','Dissolved Sodium')
+            , selected='')
+
+```
+
+
+
+#### Global
+
+This is pretty universal and could be used by UI or server, so I'd put it in global.R
+
+```{r step11a_global}
+
+colOptions <- data.frame(stressLevels=as.factor(c("No Probability of Stress to Aquatic Life",
+                                                  "Low Probability of Stress to Aquatic Life",
+                                                  "Medium Probability of Stress to Aquatic Life",
+                                                  "High Probability of Stress to Aquatic Life")))
+
+pal <- colorFactor(c("blue","limegreen","yellow","red"),levels=colOptions$stressLevels, ordered=T)
+
+
+```
+
+
+11b) Connect changes on server side
+
+#### SERVER
+
+Switch user input data to match what is in dataset behind the scenes
+
+```{r step11a_server.1}
+
+dataSelect <- reactive({switch(input$parameterToPlot,
+                               'VSCI'='VSCIfactor','Dissolved Oxygen'='DOfactor','pH'='pHfactor',
+                               'Specific Conductivity'='SpCondfactor','Total Phosphorus'='TPfactor',
+                               'Total Nitrogen'='TNfactor','Total Habitat'='TotHabfactor',
+                               'Total Dissolved Solids'='TDSfactor','Metals CCU'='MetalCCUfactor',
+                               'LRBS'='LRBSfactor','Dissolved Sodium'='Nafactor','Dissolved Potassium'='Kfactor',
+                               'Dissolved Chloride'='Clfactor','Dissolved Sulfate'='Sffactor')})
+
+
+```
+
+
+Subset probData based on input parameter
+
+```{r step11a_server.2}
+
+filteredData <- reactive({
+  df2 <- subset(probData_long,ParameterFactor==dataSelect())
+})
+
+
+```
+
+
+Update map markers when user changes parameter
+
+```{r step11a_server.3}
+
+observe({
+  leafletProxy('myMap',data=filteredData()) %>% clearMarkers() %>%
+    addCircleMarkers(color=~pal(ParameterFactorLevel),fillOpacity=1,stroke=FALSE
+                     ,popup=paste(sep = "<br/>",paste(strong("StationID: "),filteredData()$sampleID,sep="")
+                                  ,paste(strong("VSCI Score: "),prettyNum(filteredData()$VSCIAll,digits=3),sep="")
+                                  ,paste(strong(filteredData()$Parameter[1]),": ",
+                                         prettyNum(filteredData()$ParameterMeasure,digits=4)," ",
+                                         filteredData()$units,sep="")))})
+
+
+```
+

@@ -1,0 +1,120 @@
+---
+title: "3 leaflet Map app added fun"
+author: "Emma Jones"
+date: "4/30/2019"
+output: html_document
+---
+
+
+So once you have labored over making a leaflet map and connecting all the observe() calls to get layers to toggle on and off, you deserve to know the shortcut. 
+
+Enter mapview.
+
+```{r}
+knitr::include_graphics("images/headexplosionemoji.jpg")
+```
+
+
+Mapview basically uses the leaflet package and builds upon it by functionalizing a bunch of the parts of the map you just labored over e.g. toggling layers on and off, basemaps, popups (we didn't dig in but with a few more strategically placed paste() statements, you could have a pretty intricate popup going on there). This is not to say leaflet is dead to me, on the contrary, I use it frequently. It just depends on how much control you want over your map. If your want mild to moderate control/customization, use mapview. If you want to get dirty in some code, use leaflet. You want to be a mapping ninja? Use both in the same map (see head explosion emoji for emphasis).
+
+Before we really dig in to mapview, let's get spatial data into R with a different tool: sf. 
+
+sf is sp 2.0. What is sp? sp was the package you used to get spatial data into R (less rasters because you use the raster package for that). sp was great. sp is great, but it's complicated and slow. Roger Bivand is all you need to know about sp. Look him up, tons of resources on spatial data processing in R, he's a legend. BUTTTTTT, in ~ 2014ish sf was published and it was the new kid on the block. It took a few years to get people on board- because once you invested in sp over Arc products/GRASS/python, man, you were invested- but the sun is setting on sp. I still HIGHLY encourage you learn sp for reference, but sf is where you should be spending your coding efforts. sf takes advantage of the tidyverse and uses 'sticky' dataframes/tibbles such that spatial data is nested with table data in a neatly organized list column. In comparison, sp used S4 objects where data and spatial information were organized into 'slots' and (unless you were pretty well versed in sp) you could easily lose data or not complete the spatial analysis you thought you were doing. sf is great. End of story.
+
+For more information on sf, see Robin Lovelace's great book (online fo free): https://geocompr.robinlovelace.net/
+Fabulous resource and my favorite on the topic. Of course there are many more with a simple google search.
+
+```{r startup, include=FALSE}
+library(sf)
+library(mapview)
+library(tidyverse)
+library(RColorBrewer)
+```
+
+Let's bring in that same data we were using for 3_leafletMapApp. We are also going to use the sf library to quickly change the flat file into a spatial object so it can be plotted easily.
+
+```{r dataDrop}
+
+probData <- readRDS('C:/HardDriveBackup/R/GitHub/IntroToShiny/3_leafletMapApp/data/probData.RDS') %>% # you probably need to change absolute file location
+  st_as_sf(coords = c("LongitudeDD", "LatitudeDD"),  # make spatial layer using these columns
+           remove = F, # don't remove these lat/lon cols from df
+           crs = 4326) # add coordinate reference system, needs to be geographic for now bc entering lat/lng, 
+
+```
+
+
+Quick have a look at what turning the probData.RDS into an sf object looks like. Hint: go to far right of table and see geometry listcolumn.
+
+```{r}
+View(probData)
+str(probData)
+```
+
+
+mapview. BOOM.
+
+```{r  mapview}
+
+mapview(probData) 
+```
+
+
+So the default map is pretty awesome, but also pretty basic. You see you have a legend (top right corner), layer control (top left under zoom), 5 preset basemaps!, built in popupTable (click any point to see), built in hover popup (hover mouse on any point to see), quick toggling of your data on and off, and go to bottom right corner for a prebuilt home button (takes you back to dataset if ever you get lost or zoom too far in/out). 
+
+Mapview is pretty awesome. 
+
+You can also customize it pretty easily. This is just one example.
+
+```{r mapview custom}
+# choose only a few basemaps, turn off legend, set a color palette, choose default NA color
+mapviewOptions(basemaps = c( "OpenStreetMap",'Esri.WorldImagery'),
+               vector.palette = colorRampPalette(brewer.pal(3, "Set1")),
+               na.color = "magenta",
+               legend=FALSE)
+
+mapview(probData, 
+        label = probData$StationID, # set your hover field
+        color = 'yellow', # feature outer color
+        layer.name = 'ProbMon Sites 2001 - 2014', # default layer name
+        popup= popupTable(probData, zcol = c('StationID', 'Year', 'Basin', 'VSCIVCPMI')) # limit popup table to these columns
+        ) 
+
+```
+
+The second map makes so much more sense. 
+
+
+You can also add multiple layers to a single map. 
+
+
+```{r mapview on mapview}
+
+streams <- st_read('C:/HardDriveBackup/R/GitHub/IntroToShiny/3_leafletMapApp/data/Streams_wgs84.shp') # you will need to change the file location to your absolute file location since we are going up a directory
+
+ecoL3 <- st_read('C:/HardDriveBackup/R/GitHub/IntroToShiny/3_leafletMapApp/data/vaECOREGIONlevel3__proj84.shp')# you will need to change the file location to your absolute file location since we are going up a directory
+
+
+
+mapview(probData, 
+        label = probData$StationID, # set your hover field
+        color = 'yellow', # feature outer color
+        layer.name = 'ProbMon Sites 2001 - 2014', # default layer name
+        popup= popupTable(probData, zcol = c('StationID', 'Year', 'Basin', 
+                                             'VSCIVCPMI')) # limit popup table to these columns
+        ) +
+  mapview(streams, 
+          color = 'blue',
+          layer.name = 'Major Rivers',
+          label = streams$NAME) +
+  mapview(ecoL3, 
+          color = 'black',
+          layer.name = 'Level III Ecoregions',
+          label = ecoL3$US_L3NAME) 
+
+```
+
+
+
+Moral of the story- sf is great, mapview is great (especially for quick data viewing), leaflet is great. Your preference for a given project or part of project just depends on your needs. Become familiar with all packages overviewed in this short script and you will be sure to have a lot of options right at your fingertips.
+
+

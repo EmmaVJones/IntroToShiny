@@ -43,6 +43,14 @@ clrsDK <- c("gray","cornflowerblue","limegreen","yellow","red")
 brksDNa <- c(0,7,10,20)
 clrsDNa <- c("gray","cornflowerblue","limegreen","yellow","red")
 
+colOptions <- data.frame(stressLevels=as.factor(c("No Probability of Stress to Aquatic Life",
+                                                  "Low Probability of Stress to Aquatic Life",
+                                                  "Medium Probability of Stress to Aquatic Life",
+                                                  "High Probability of Stress to Aquatic Life")))
+
+pal <- colorFactor(c("blue","limegreen","yellow","red"),levels=colOptions$stressLevels, ordered=T)
+
+
 
 
 
