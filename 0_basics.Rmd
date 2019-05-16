@@ -1,7 +1,7 @@
 ---
 title: "Shiny Basics"
 author: "Emma Jones"
-date: "4/30/2019"
+date: "5/16/2019"
 output: html_document
 ---
 
@@ -12,7 +12,7 @@ This script walks you through the basics of shiny and building your first Shiny 
 If you run into any issues prior to the workshop, do not hesitate to contact me:
   emma.jones@deq.virginia.gov.
 
-Step 1: Install Shiny Package from CRAN. Delete the # and run each line of code if you have not updated your packages to run in R 3.5.2 already.
+Step 1: Install Shiny Package from CRAN. Delete the # and run each line of code if you have not updated your packages to run in R 3.6.0 already.
 
 ```{r install packages}
 #install.packages('shiny')

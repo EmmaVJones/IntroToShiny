@@ -10,7 +10,7 @@ So once you have labored over making a leaflet map and connecting all the observ
 
 Enter mapview.
 
-```{r}
+```{r, echo = FALSE}
 knitr::include_graphics("images/headexplosionemoji.jpg")
 ```
 
